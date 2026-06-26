@@ -34,7 +34,9 @@ data by returning `null`.
 
 ## Pydantic
 
-Good: the model owns validation, and the service accepts the validated type.
+Use `model_config` with `ConfigDict` on `BaseModel` classes, or `SettingsConfigDict` on `BaseSettings` classes. Do not create nested `Config` classes.
+
+Good: the model owns validation and configuration, and the service accepts the validated type.
 
 ```python
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
@@ -49,6 +51,31 @@ class CreateUser(BaseModel):
 
 def create_user(data: CreateUser) -> User:
     ...
+```
+
+Good: configuration lives in `model_config`.
+
+```python
+from pydantic import BaseModel, ConfigDict
+
+
+class MyModel(BaseModel):
+    model_config = ConfigDict(frozen=True, strict=True)
+
+    name: str
+```
+
+Bad: nested `Config` classes are outdated for Pydantic v2 models.
+
+```python
+from pydantic import BaseModel
+
+
+class MyModel(BaseModel):
+    name: str
+
+    class Config:
+        frozen = True
 ```
 
 Bad: the service re-validates raw input.

@@ -1,6 +1,6 @@
 ---
 name: using-weaverbase
-description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, or Docker Compose patterns
+description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, language, platform, database, Docker, or testing patterns
 ---
 
 ## Overview
@@ -16,8 +16,11 @@ Use this skill for work involving:
 - API, CLI, UI, worker, background job, or service boundaries
 - Pydantic, Zod, request bodies, external responses, forms, env values, or message payloads
 - Naming classes, hooks, functions, components, booleans, modules, or domain concepts
-- Docker Compose files, environment variables, labels, or Compose version syntax
-- Code review for architecture, validation, naming, or Compose conventions
+- Python, FastAPI, Python PDF processing, TypeScript, JavaScript, React, Next.js, Node.js, or Rust code
+- Dockerfiles, Docker Compose files, environment variables, labels, or Compose version syntax
+- SQL schemas, database queries, ORM calls, migrations, or timestamp/JSON columns
+- Configuration, logging, or test framework choices
+- Code review for architecture, validation, naming, language, platform, database, Docker, or testing conventions
 
 ## Mandatory Reference Check
 
@@ -26,8 +29,15 @@ Before editing or giving implementation guidance, read every reference that appl
 | Situation | Required reference |
 | --- | --- |
 | Business logic, API routes, CLI commands, UI events, workers, jobs, service boundaries, domain errors | `references/service-first-architecture.md` |
-| Pydantic, Zod, request/response shapes, form input, env parsing, external API payloads, `dict`, `unknown`, `any`, ad-hoc validation | `references/data-shapes-validation.md` |
+| Pydantic, Pydantic model configuration, Zod, request/response shapes, form input, env parsing, external API payloads, `dict`, `unknown`, `any`, ad-hoc validation | `references/data-shapes-validation.md` |
 | Names ending in `Service`, `Manager`, `Handler`, `Helper`, `Util`, `Data`, `Info`, `State`; unclear booleans or domain names | `references/naming.md` |
+| Python type hints, dictionary merging, Python PDF libraries, FastAPI dependencies, async Python database access | `references/python-fastapi.md` |
+| TypeScript, JavaScript, React, Next.js, ESM/CommonJS, async code, array transformations, routing, frontend state | `references/typescript-react-nextjs.md` |
+| Node.js built-in imports, `node:` protocol, file operations, callback/sync filesystem APIs | `references/nodejs.md` |
+| Rust error handling, `Result`, `unwrap`, string ownership, Tokio, async runtime choices | `references/rust.md` |
+| Dockerfiles, base images, multi-stage builds, container users, `latest`, root containers | `references/docker.md` |
+| SQL schemas, PostgreSQL JSON columns, timestamps, ORM/database queries in async apps | `references/sql-database.md` |
+| Configuration, environment variables, logging, `print()`, test framework choices | `references/general-practices.md` |
 | `docker-compose.yml`, `compose.yaml`, environment variables, labels, top-level `version`, YAML-sensitive values | `references/docker-compose.md` |
 
 If more than one row applies, read all of them. If unsure, read the reference.
@@ -38,11 +48,18 @@ If more than one row applies, read all of them. If unsure, read the reference.
 | --- | --- | --- |
 | Architecture | Put business logic in a service layer that can be called from API, CLI, UI, and workers | Put workflows, database queries, subprocess calls, or domain decisions inside routes, commands, components, or job handlers |
 | Function scope | Keep service and interface functions focused on one behavior | Mix orchestration, validation, formatting, persistence, and error mapping in one large function |
-| Validation | Validate at boundaries with Pydantic models or Zod schemas; pass typed values inward | Accept raw `dict`, `unknown`, or `any` in services/components and re-check shape manually |
+| Validation | Validate at boundaries with Pydantic models or Zod schemas; use Pydantic `model_config`; pass typed values inward | Accept raw `dict`, `unknown`, or `any` in services/components, re-check shape manually, or use nested Pydantic `Config` classes |
 | Frontend data | Parse API/form payloads in route loaders, server actions, API-client adapters, form resolvers, or explicit boundary/container modules; pass typed props to presentational components | Put `safeParse`, `if (!value?.id)`, or render-null shape guards inside reusable or presentational components |
 | Naming | Name by intent: what the thing does or represents | Use generic box names like `UserService`, `InvoiceHelper`, `BillingManager`, or `readyState` unless the suffix has real technical meaning |
 | Error responses | Map domain errors to safe user-facing messages at boundaries | Return raw exception text, stack traces, secrets, queries, file paths, payloads, or upstream internals |
-| Tests | Add or update focused tests when behavior changes | Treat manual checks or urgency as enough for changed behavior |
+| Python/FastAPI | Use `|` unions, dict `|` merges, `pypdfium2` for PDFs, async database drivers, and `Annotated[..., Depends(...)]` | Use `typing.Optional`, `typing.Union`, `{**a, **b}`, `pdf2image`, PyMuPDF/`fitz`, sync DB drivers in async apps, or default-parameter `Depends()` |
+| TypeScript/React/Next.js | Use ESM, `const`/`let`, `async`/`await`, array methods, function components, hooks, and App Router for new work | Use CommonJS, `var`, promise chains by default, class components, or Pages Router APIs for new App Router work |
+| Node.js | Use `node:` imports for built-ins and promise-based filesystem APIs | Import core modules without `node:` or use callback/sync filesystem APIs in application code |
+| Rust | Use `Result`, `?`, borrowed `&str` where possible, and current Tokio async patterns | Use `.unwrap()`/`.expect()` in production or clone/allocate strings unnecessarily |
+| Docker | Use specific base image tags, multi-stage builds, and non-root users | Use `latest`, ship build dependencies, or run production containers as root |
+| SQL/database | Use PostgreSQL `JSONB`, `TIMESTAMPTZ`, and async ORM/database APIs in async apps | Use `JSON`, timezone-less timestamps, or blocking DB calls in async handlers |
+| Configuration/logging | Validate environment configuration and use structured logging | Hardcode config or use `print()` for application logging |
+| Tests | Add or update focused tests with `pytest`, `vitest`, or `jest` when behavior changes | Treat manual checks or urgency as enough, or start new Python projects with `unittest` by default |
 | Compose | Omit top-level `version`; use mapping syntax for `environment` and `labels`; quote YAML-sensitive values | Copy obsolete Compose examples with `version: "3.9"` and `KEY=value` lists by default |
 
 ## One Good Example
@@ -110,6 +127,16 @@ Stop and read the applicable reference before continuing if you think or see:
 - "Legacy reason" means a concrete tool/platform constraint, not personal familiarity or old examples.
 - "Return a raw untyped dict/object first and add result types later."
 - "Expose the raw exception detail so production is easier to debug."
+- "Use `typing.Optional`, CommonJS, `var`, or promise chains because the old style is familiar."
+- "Use nested Pydantic `Config` classes because older examples do it."
+- "Use `pdf2image` or PyMuPDF (`fitz`) for Python PDF work because they are familiar."
+- "Use Pages Router APIs for new Next.js App Router work."
+- "Import Node built-ins without `node:` because it is shorter."
+- "Use Docker `latest` or root containers for now and harden them later."
+- "Use a synchronous database driver inside an async API or worker."
+- "Use PostgreSQL `JSON` or `TIMESTAMP` because it is close enough."
+- "Use `print()` for application logging or hardcode config for speed."
+- "Start a new Python test suite with `unittest` by default."
 - "This is a quick behavior change, so manual verification is enough."
 
 ## Rationalizations to Reject
@@ -125,16 +152,28 @@ Stop and read the applicable reference before continuing if you think or see:
 | "I used `safeParse` and returned `null`, so the component is safe." | `safeParse` belongs at the boundary. Presentational components receive typed props and do not decide whether external data is structurally valid. |
 | "Return the raw exception detail so production debugging is easier." | Log internals through the appropriate channel; return safe user-facing messages from API, CLI, UI, and worker boundaries. |
 | "Tests will slow this down; I checked it manually." | Behavior changes need focused tests that prove the new behavior or regression fix. |
+| "The legacy syntax still works, so it is fine." | Working code is not the same as current project convention. Use the modern language, framework, platform, and database practices unless a real constraint requires otherwise. |
+| "The old Pydantic `Config` class is shorter and familiar." | Use Pydantic v2 `model_config` with `ConfigDict`, or `SettingsConfigDict` for settings models. |
+| "The PDF library does not matter as long as it renders pages." | For Python PDF work, use `pypdfium2`; avoid `pdf2image` and PyMuPDF (`fitz`). |
+| "This async endpoint only does one blocking call." | Blocking calls in async paths are still event-loop hazards. Use async drivers and async ORM/database APIs. |
+| "The Dockerfile is only internal, so `latest` and root are fine." | Internal images still need reproducibility and least privilege. Use specific tags and non-root users. |
 
 ## Common Mistakes
 
 - Reading only this file and skipping the references. This file routes you to the rule details; it does not replace them.
 - Treating user-requested shortcuts as permission to violate project rules. Offer the compliant equivalent instead.
 - Moving validation from the boundary into a service or component because the check is small.
+- Using nested Pydantic `Config` classes instead of `model_config` with `ConfigDict` or `SettingsConfigDict`.
+- Reaching for `pdf2image` or PyMuPDF (`fitz`) for Python PDF work instead of `pypdfium2`.
 - Letting functions grow until they mix unrelated responsibilities instead of splitting by behavior and boundary concern.
 - Calling an ordinary component a "boundary" so it can accept `unknown`/`any`, call `safeParse`, and hide invalid data by returning `null`; validate in a real boundary/container module and surface failures deliberately.
 - Renaming `SomethingService` to `SomethingProcessor` without making the name more specific. If the concept is vague, rename the concept.
 - Preserving obsolete Docker Compose syntax because it appears in old examples.
 - Treating familiarity with old Compose syntax as a compatibility requirement.
+- Keeping outdated language or framework style because it still runs, instead of checking the relevant topic reference.
+- Using synchronous filesystem or database operations in async request handlers or workers.
+- Adding new Dockerfiles with `latest` tags or root runtime users.
+- Choosing weak SQL defaults such as `JSON` or timezone-less timestamps without a concrete compatibility reason.
+- Using unvalidated environment values or `print()` logging in application code.
 - Skipping focused tests for behavior changes because the change looks small or urgent.
 - Returning raw exception details to users instead of safe boundary-level messages.

@@ -1,6 +1,6 @@
 ---
 name: using-weaverbase
-description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, language, platform, database, Docker, or testing patterns
+description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, Python contracts, language, platform, database, Docker, or testing patterns
 ---
 
 ## Overview
@@ -16,7 +16,7 @@ Use this skill for work involving:
 - API, CLI, UI, worker, background job, or service boundaries
 - Pydantic, Zod, request bodies, external responses, forms, env values, or message payloads
 - Naming classes, hooks, functions, components, booleans, modules, or domain concepts
-- Python, FastAPI, Python PDF processing, TypeScript, JavaScript, React, Next.js, Node.js, or Rust code
+- Python, FastAPI, Python PDF processing, `Protocol`, internal contracts, adapters, plugin boundaries, test seams, TypeScript, JavaScript, React, Next.js, Node.js, or Rust code
 - Dockerfiles, Docker Compose files, environment variables, labels, or Compose version syntax
 - SQL schemas, database queries, ORM calls, migrations, or timestamp/JSON columns
 - Configuration, logging, or test framework choices
@@ -31,6 +31,7 @@ Before editing or giving implementation guidance, read every reference that appl
 | Business logic, API routes, CLI commands, UI events, workers, jobs, service boundaries, domain errors | `references/service-first-architecture.md` |
 | Pydantic, Pydantic model configuration, Zod, request/response shapes, form input, env parsing, external API payloads, `dict`, `unknown`, `any`, ad-hoc validation | `references/data-shapes-validation.md` |
 | Names ending in `Service`, `Manager`, `Handler`, `Helper`, `Util`, `Data`, `Info`, `State`; unclear booleans or domain names | `references/naming.md` |
+| Python `Protocol`, internal contracts, interfaces, adapters, plugin boundaries, test seams, structural typing, implementation discovery | `references/avoid-using-python-protocol.md` |
 | Python type hints, dictionary merging, Python PDF libraries, FastAPI dependencies, async Python database access | `references/python-fastapi.md` |
 | TypeScript, JavaScript, React, Next.js, ESM/CommonJS, async code, array transformations, routing, frontend state | `references/typescript-react-nextjs.md` |
 | Node.js built-in imports, `node:` protocol, file operations, callback/sync filesystem APIs | `references/nodejs.md` |
@@ -51,6 +52,7 @@ If more than one row applies, read all of them. If unsure, read the reference.
 | Validation | Validate at boundaries with Pydantic models or Zod schemas; use Pydantic `model_config`; pass typed values inward | Accept raw `dict`, `unknown`, or `any` in services/components, re-check shape manually, or use nested Pydantic `Config` classes |
 | Frontend data | Parse API/form payloads in route loaders, server actions, API-client adapters, form resolvers, or explicit boundary/container modules; pass typed props to presentational components | Put `safeParse`, `if (!value?.id)`, or render-null shape guards inside reusable or presentational components |
 | Naming | Name by intent: what the thing does or represents | Use generic box names like `UserService`, `InvoiceHelper`, `BillingManager`, or `readyState` unless the suffix has real technical meaning |
+| Python contracts | Prefer explicit nominal base classes or framework contracts for internal contracts where implementers must be discoverable | Use `Protocol` as an internal implementation registry, or hide framework/plugin contracts behind structural typing |
 | Error responses | Map domain errors to safe user-facing messages at boundaries | Return raw exception text, stack traces, secrets, queries, file paths, payloads, or upstream internals |
 | Python/FastAPI | Use `|` unions, dict `|` merges, `pypdfium2` for PDFs, async database drivers, and `Annotated[..., Depends(...)]` | Use `typing.Optional`, `typing.Union`, `{**a, **b}`, `pdf2image`, PyMuPDF/`fitz`, sync DB drivers in async apps, or default-parameter `Depends()` |
 | TypeScript/React/Next.js | Use ESM, `const`/`let`, `async`/`await`, array methods, function components, hooks, and App Router for new work | Use CommonJS, `var`, promise chains by default, class components, or Pages Router APIs for new App Router work |
@@ -123,6 +125,8 @@ Stop and read the applicable reference before continuing if you think or see:
 - "We can replace the raw `dict`/`any` with a schema later."
 - "A quick `if (!value?.id)` check is enough for now."
 - "Use `Service`, `Helper`, or `Manager` because it is familiar."
+- "Use `Protocol` for this internal contract because it feels flexible."
+- "A protocol is enough to show who implements this contract."
 - "Copy the old Compose `version: \"3.9\"` style because it still works."
 - "Legacy reason" means a concrete tool/platform constraint, not personal familiarity or old examples.
 - "Return a raw untyped dict/object first and add result types later."
@@ -146,6 +150,7 @@ Stop and read the applicable reference before continuing if you think or see:
 | "Since you’re in a hurry, I’ll keep this minimal and validate directly where it’s easy to see." | Boundary models are the minimal compliant path. Put structural validation on Pydantic/Zod and keep interfaces thin. |
 | "We can replace the raw `dict` with a Pydantic model later once the endpoint shape settles." | The shape is the contract. Define it once now and derive variants when needed. |
 | "I’ll use `UserService` for now since that’s the name you asked for." | Prefer an intent-based name unless the suffix communicates a deliberate technical contract. |
+| "I’ll define this internal contract as a `Protocol` so implementations stay flexible." | Prefer explicit nominal base classes or framework contracts when readers need to find implementers. Use `Protocol` only for intentional narrow structural boundaries. |
 | "Returning raw dicts or untyped objects is fine for a quick first pass." | Services return structured result types; interface serialization to JSON is a boundary concern. |
 | "You asked for classic Compose syntax, so I kept `version` and env lists." | Use the current Compose Specification unless a named tool, platform, or legacy integration requires otherwise. Personal habit is not compatibility. |
 | "No time to add schemas, so I’ll guard the component locally." | Parse external input at the boundary with Zod/Pydantic; components consume typed data. |
@@ -168,6 +173,7 @@ Stop and read the applicable reference before continuing if you think or see:
 - Letting functions grow until they mix unrelated responsibilities instead of splitting by behavior and boundary concern.
 - Calling an ordinary component a "boundary" so it can accept `unknown`/`any`, call `safeParse`, and hide invalid data by returning `null`; validate in a real boundary/container module and surface failures deliberately.
 - Renaming `SomethingService` to `SomethingProcessor` without making the name more specific. If the concept is vague, rename the concept.
+- Using `Protocol` for internal contracts where parent/child inheritance would make implementers easier to discover.
 - Preserving obsolete Docker Compose syntax because it appears in old examples.
 - Treating familiarity with old Compose syntax as a compatibility requirement.
 - Keeping outdated language or framework style because it still runs, instead of checking the relevant topic reference.

@@ -61,6 +61,35 @@ import fitz
 
 ## FastAPI / Modern Python Web
 
+### Uvicorn logging
+
+Use `references/python-logging/log-config.json` as the default Uvicorn logging template unless the user or project specifies another logging preference. Copy or apply that template into the user's app repository first, then pass the app-local config path when Uvicorn starts so the application and access log format is available before the app emits startup logs.
+
+Do not point Uvicorn at `references/python-logging/log-config.json` at runtime. Skill files are usually outside the app repository and container build context.
+
+Recommended app-local path: `config/log-config.json`
+
+CLI startup:
+
+```bash
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --log-config config/log-config.json
+```
+
+Programmatic startup:
+
+```python
+from pathlib import Path
+
+import uvicorn
+
+from app.main import app
+
+LOG_CONFIG_PATH = Path("config/log-config.json")
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, log_config=str(LOG_CONFIG_PATH))
+```
+
 ### Async database operations
 
 Use async database drivers and async ORM methods in async applications. Avoid synchronous drivers that block the event loop.

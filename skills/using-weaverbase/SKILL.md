@@ -1,6 +1,6 @@
 ---
 name: using-weaverbase
-description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, Python contracts, language, platform, database, Docker, or testing patterns
+description: Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, Python contracts, Python logging, language, platform, database, Docker, or testing patterns
 ---
 
 ## Overview
@@ -32,7 +32,8 @@ Before editing or giving implementation guidance, read every reference that appl
 | Pydantic, Pydantic model configuration, Zod, request/response shapes, form input, env parsing, external API payloads, `dict`, `unknown`, `any`, ad-hoc validation | `references/data-shapes-validation.md` |
 | Names ending in `Service`, `Manager`, `Handler`, `Helper`, `Util`, `Data`, `Info`, `State`; unclear booleans or domain names | `references/naming.md` |
 | Python `Protocol`, internal contracts, interfaces, adapters, plugin boundaries, test seams, structural typing, implementation discovery | `references/avoid-using-python-protocol.md` |
-| Python type hints, dictionary merging, Python PDF libraries, FastAPI dependencies, async Python database access | `references/python-fastapi.md` |
+| Python type hints, dictionary merging, Python PDF libraries, FastAPI dependencies, async Python database access, Uvicorn logging config | `references/python-fastapi.md` |
+| Python application logging defaults, bundled logging config template, app-local log config files, Uvicorn log format, `log_config`, `--log-config` | `references/python-logging.md`; also read `references/python-fastapi.md` for FastAPI/Uvicorn apps and `references/general-practices.md` for general logging rules |
 | TypeScript, JavaScript, React, Next.js, ESM/CommonJS, async code, array transformations, routing, frontend state | `references/typescript-react-nextjs.md` |
 | Node.js built-in imports, `node:` protocol, file operations, callback/sync filesystem APIs | `references/nodejs.md` |
 | Rust error handling, `Result`, `unwrap`, string ownership, Tokio, async runtime choices | `references/rust.md` |
@@ -60,7 +61,7 @@ If more than one row applies, read all of them. If unsure, read the reference.
 | Rust | Use `Result`, `?`, borrowed `&str` where possible, and current Tokio async patterns | Use `.unwrap()`/`.expect()` in production or clone/allocate strings unnecessarily |
 | Docker | Use specific base image tags, multi-stage builds, and non-root users | Use `latest`, ship build dependencies, or run production containers as root |
 | SQL/database | Use PostgreSQL `JSONB`, `TIMESTAMPTZ`, and async ORM/database APIs in async apps | Use `JSON`, timezone-less timestamps, or blocking DB calls in async handlers |
-| Configuration/logging | Validate environment configuration and use structured logging | Hardcode config or use `print()` for application logging |
+| Configuration/logging | Validate environment configuration, use structured logging, and copy/apply `references/python-logging/log-config.json` into Python apps as an app-local config unless specified otherwise | Hardcode config, use `print()` for application logging, invent Python logging formats when the bundled template applies, or reference skill files at runtime |
 | Tests | Add or update focused tests with `pytest`, `vitest`, or `jest` when behavior changes | Treat manual checks or urgency as enough, or start new Python projects with `unittest` by default |
 | Compose | Omit top-level `version`; use mapping syntax for `environment` and `labels`; quote YAML-sensitive values | Copy obsolete Compose examples with `version: "3.9"` and `KEY=value` lists by default |
 
@@ -140,6 +141,9 @@ Stop and read the applicable reference before continuing if you think or see:
 - "Use a synchronous database driver inside an async API or worker."
 - "Use PostgreSQL `JSON` or `TIMESTAMP` because it is close enough."
 - "Use `print()` for application logging or hardcode config for speed."
+- "Create a new Python logging format instead of copying/applying `references/python-logging/log-config.json`, even though no other preference was specified."
+- "Point app code, Dockerfiles, or Uvicorn startup commands at the skill file path instead of an app-local copied config."
+- "Start a FastAPI app without passing the app-local copied logging config to Uvicorn, then fix logging after startup."
 - "Start a new Python test suite with `unittest` by default."
 - "This is a quick behavior change, so manual verification is enough."
 
@@ -156,6 +160,7 @@ Stop and read the applicable reference before continuing if you think or see:
 | "No time to add schemas, so I’ll guard the component locally." | Parse external input at the boundary with Zod/Pydantic; components consume typed data. |
 | "I used `safeParse` and returned `null`, so the component is safe." | `safeParse` belongs at the boundary. Presentational components receive typed props and do not decide whether external data is structurally valid. |
 | "Return the raw exception detail so production debugging is easier." | Log internals through the appropriate channel; return safe user-facing messages from API, CLI, UI, and worker boundaries. |
+| "I will set up Python logging later after the app starts." | Copy/apply `references/python-logging/log-config.json` into the app repository unless another preference is specified; FastAPI apps should pass that app-local config to Uvicorn so startup logs use the configured format. |
 | "Tests will slow this down; I checked it manually." | Behavior changes need focused tests that prove the new behavior or regression fix. |
 | "The legacy syntax still works, so it is fine." | Working code is not the same as current project convention. Use the modern language, framework, platform, and database practices unless a real constraint requires otherwise. |
 | "The old Pydantic `Config` class is shorter and familiar." | Use Pydantic v2 `model_config` with `ConfigDict`, or `SettingsConfigDict` for settings models. |
@@ -181,5 +186,8 @@ Stop and read the applicable reference before continuing if you think or see:
 - Adding new Dockerfiles with `latest` tags or root runtime users.
 - Choosing weak SQL defaults such as `JSON` or timezone-less timestamps without a concrete compatibility reason.
 - Using unvalidated environment values or `print()` logging in application code.
+- Skipping the `references/python-logging/log-config.json` template for a Python app when the user or project has not specified another logging preference.
+- Referencing `references/python-logging/log-config.json` from app runtime code, Dockerfiles, or deployment commands instead of copying/applying it into the app repository first.
+- Letting FastAPI/Uvicorn start before applying the app-local copied logging config.
 - Skipping focused tests for behavior changes because the change looks small or urgent.
 - Returning raw exception details to users instead of safe boundary-level messages.

@@ -1,83 +1,82 @@
 # Avoid Using Python Protocol
 
-Prefer explicit nominal contracts for internal Python code. Use `Protocol` only when a boundary is intentionally structural and readers do not need an explicit implementer relationship.
+Do not introduce `typing.Protocol` for application abstractions by default. Prefer explicit nominal contracts: concrete typed library classes, framework contracts, standard inheritance, or `abc.ABC`.
 
 ## Core Principle
 
 `Protocol` answers "what shape can I consume?" It does not answer "who implements this?"
 
-For internal contracts, readers often need to navigate from the contract to supported implementations. Parent/child inheritance and nominal base classes make that relationship easier to read, grep, and inspect with subclass navigation.
+For internal Python code, readers usually need to navigate from a contract to its supported implementations. Parent/child inheritance and nominal base classes make that relationship easier to read, grep, inspect with subclass navigation, and maintain under strict typing.
 
-## Default for Internal Code
+## Default Rule
 
-Avoid `Protocol` for internal service contracts, plugin contracts, adapters, and test seams when:
+Avoid `Protocol` for internal service contracts, adapters, plugin contracts, and test seams.
 
-- Maintainers will ask "who implements this?"
-- The project needs a central list of supported implementations.
-- Implementers share construction rules, lifecycle hooks, registration, or orchestration policy.
-- The framework or plugin system already requires inheritance, subclassing, or registration.
-- The interface is large, unstable, or likely to accumulate methods.
+Use one of these instead:
 
-Use an explicit base class or framework contract instead. Structural typing should not hide important implementation relationships.
+- A concrete typed external class when a library already exposes one.
+- A framework base class or registration mechanism when the framework defines the contract.
+- An `abc.ABC` when the application owns the contract and implementations must be discoverable.
+- Standard inheritance when shared behavior or construction rules belong on a base class.
+- A callable type alias when the dependency is only a function-shaped callback.
 
-## Use Protocol When
+Structural typing should not hide important implementation relationships.
 
-Use `Protocol` only when the boundary is truly about a small behavior that unrelated objects can satisfy structurally:
+## Why This Matters
 
-- External adapters should be swappable and callers only depend on behavior.
-- Tests need lightweight fakes that implement the behavior under test.
-- Multiple unrelated classes already share the same small capability.
-- Consumer code needs only a narrow capability, not a broad implementation contract.
-- Dependency inversion matters more than making implementers import a shared base class.
+Avoiding internal `Protocol` contracts improves:
+
+- IDE navigation from contract to implementation.
+- Grep/search discoverability.
+- Explicit ownership of application extension points.
+- Clarity about which implementations are supported.
+- Refactor safety when the contract changes.
 
 ## Avoid Protocol When
 
-Avoid `Protocol` when discoverability or nominal semantics are part of the contract:
+Avoid `Protocol` when any of these are true:
 
-- Developers frequently need to find every implementation.
+- Developers need to find every implementation.
 - The project needs a supported-implementation manifest.
+- The application owns the abstraction.
+- The boundary is an internal service, adapter, plugin, or test seam.
 - Implementers must share construction rules or lifecycle hooks.
 - A framework requires nominal inheritance or explicit registration.
 - The interface is broad, unstable, or named after a vague role such as `Client` or `Provider`.
+- The only reason is making tests or fakes easier to write.
 
-## Practical Exception Pattern
+Tests can use mocks, fakes that inherit from the application ABC, or typed casts at the test boundary. Do not introduce `Protocol` solely for test convenience.
 
-When `Protocol` is the right exception, keep it small and name it by capability:
+## Exception Gate
 
-```python
-from dataclasses import dataclass
-from typing import Protocol
+Do not add `typing.Protocol` unless a concrete constraint requires structural typing and an explicit design decision approves it.
 
-@dataclass(frozen=True, slots=True)
-class Message:
-    recipient: str
-    body: str
+Before using `Protocol`, confirm all of these:
 
+1. A concrete external class, ABC, framework contract, inherited base class, or callable type is not sufficient.
+2. Implementer discovery through inheritance is not required.
+3. The code intentionally accepts unrelated objects by structural shape.
+4. The protocol is small, capability-focused, and unlikely to accumulate methods.
+5. The reason is documented near the boundary.
 
-class SendsMessages(Protocol):
-    async def send(self, message: Message) -> None:
-        ...
-
-
-async def notify(sender: SendsMessages, message: Message) -> None:
-    await sender.send(message)
-```
-
-`notify` can use a production adapter, a test fake, or any other object with `send`. If future maintainers need a discoverable inventory of senders, solve that with an explicit registry, base class, or framework registration. Do not pretend the protocol provides implementation discovery.
+If any answer is uncertain, do not use `Protocol`.
 
 ## Decision Check
 
-Before adding a protocol, answer both questions:
+Before adding a contract, answer these questions:
 
-1. Will consumers benefit from accepting any object with this behavior?
-2. Is it acceptable that implementers are not explicitly connected by inheritance?
+1. Does a typed class or framework contract already exist?
+2. Will maintainers need to navigate from the contract to its implementations?
+3. Is this an application-owned dependency boundary?
+4. Would an ABC or inherited base class communicate the relationship more clearly?
 
-If either answer is no, avoid `Protocol` for that boundary.
+If any answer is yes, avoid `Protocol` for that boundary.
 
 ## Common Mistakes
 
 - Using `Protocol` for internal contracts because it feels flexible, even though discoverability is the main requirement.
-- Creating broad protocols named after nouns like `Client` or `Provider` instead of small capabilities like `SendsMessages` or `ReadsRecords`.
-- Putting every method an implementation has into the protocol instead of only what the consumer needs.
+- Creating broad protocols named after nouns like `Client` or `Provider` instead of using an explicit application contract.
+- Duplicating a typed external library contract with a local protocol.
+- Using a protocol to make tests convenient instead of using mocks, ABC-backed fakes, or test-local casts.
 - Treating a protocol as an implementation registry.
 - Using a protocol to obscure a framework or plugin system's required contract.

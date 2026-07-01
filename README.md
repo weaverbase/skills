@@ -6,7 +6,7 @@ Public agent skills for applying practical engineering defaults across projects.
 
 ### `using-weaverbase`
 
-Use when creating or modifying code, reviewing changes, or choosing architecture, validation, naming, or Docker Compose patterns.
+Use when creating or modifying code, reviewing changes, or choosing architecture, validation, or Docker Compose patterns.
 
 It covers defaults for:
 
@@ -14,7 +14,6 @@ It covers defaults for:
 - Validating data at boundaries with Pydantic or Zod
 - Passing strict typed values inward instead of raw `dict`, `unknown`, or `any`
 - Returning structured result types from services
-- Naming by intent instead of generic type suffixes
 - Mapping errors to safe user-facing messages at boundaries
 - Adding or updating focused tests when behavior changes
 - Using current Docker Compose syntax

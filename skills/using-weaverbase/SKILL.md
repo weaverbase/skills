@@ -58,7 +58,7 @@ If more than one row applies, read all of them. If unsure, read the reference.
 | Rust | Use `Result`, `?`, borrowed `&str` where possible, and current Tokio async patterns | Use `.unwrap()`/`.expect()` in production or clone/allocate strings unnecessarily |
 | Docker | Use specific base image tags, multi-stage builds, and non-root users | Use `latest`, ship build dependencies, or run production containers as root |
 | SQL/database | Use PostgreSQL `JSONB`, `TIMESTAMPTZ`, and async ORM/database APIs in async apps | Use `JSON`, timezone-less timestamps, or blocking DB calls in async handlers |
-| Configuration/logging | Validate environment configuration, use structured logging, and copy/apply `references/python-logging/log-config.json` into Python apps as an app-local config unless specified otherwise | Hardcode config, use `print()` for application logging, invent Python logging formats when the bundled template applies, or reference skill files at runtime |
+| Configuration/logging | Validate environment configuration and copy/apply `references/python-logging/log-config.json` into Python apps as an app-local config unless specified otherwise | Hardcode config, use `print()` for application logging, invent Python logging formats when the bundled template applies, or reference skill files at runtime |
 | Tests | Add or update focused tests with `pytest`, `vitest`, or `jest` when behavior changes | Treat manual checks or urgency as enough, or start new Python projects with `unittest` by default |
 | Compose | Omit top-level `version`; use mapping syntax for `environment` and `labels`; quote YAML-sensitive values | Copy obsolete Compose examples with `version: "3.9"` and `KEY=value` lists by default |
 

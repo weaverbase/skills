@@ -1,6 +1,6 @@
 # General Best Practices
 
-Use validated configuration, structured logging, and modern test frameworks.
+Use validated configuration, appropriate logging, and modern test frameworks.
 
 ## Configuration
 
@@ -13,12 +13,12 @@ Good examples:
 
 ## Logging
 
-Use structured logging with appropriate log levels. Avoid `print()` statements for application logging.
+Use the standard logging module with appropriate log levels. Avoid `print()` statements for application logging.
 
 Good:
 
 ```python
-logger.info("user_registered", extra={"user_id": str(user.id)})
+logger.info("User registered: %s", user.id)
 ```
 
 Bad:

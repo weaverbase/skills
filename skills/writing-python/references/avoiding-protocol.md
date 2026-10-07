@@ -1,4 +1,4 @@
-# Avoid Using Python Protocol
+# Avoiding Python Protocol
 
 Do not introduce `typing.Protocol` for application abstractions by default. Prefer explicit nominal contracts: concrete typed library classes, framework contracts, standard inheritance, or `abc.ABC`.
 

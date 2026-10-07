@@ -59,7 +59,8 @@ Use when defining request/response schemas, parsing external payloads, forms, or
 
 Use when changing Python code, FastAPI dependencies, Python contracts, PDF processing, logging, or tests.
 
-- Use modern type hints, dictionary merging, `pypdfium2`, and `pytest`
+- Use modern type hints, dictionary merging, and `pytest`
+- Prefer `pypdfium2` for reading and rendering PDFs; avoid `pdf2image` and PyMuPDF for license reasons
 - Prefer discoverable nominal contracts over internal `Protocol` abstractions
 - Use async FastAPI database access and apply the bundled logging template as app-local configuration
 

@@ -1,6 +1,6 @@
 ---
 name: writing-python
-description: Use when writing, changing, or reviewing Python code that involves type hints (Optional, Union), merging dictionaries, reading or rendering PDFs, FastAPI endpoints or Depends dependencies, async database access, Uvicorn or application logging setup, print() debugging, choosing pytest or unittest, or deciding whether to introduce typing.Protocol for an internal contract, adapter, plugin boundary, or test seam.
+description: Use when writing, changing, or reviewing Python code that involves type hints (Optional, Union), merging dictionaries, reading, rendering, or generating PDFs, FastAPI endpoints or Depends dependencies, async database access, Uvicorn or application logging setup, print() debugging, choosing pytest or unittest, or deciding whether to introduce typing.Protocol for an internal contract, adapter, plugin boundary, or test seam.
 ---
 
 # Writing Python
@@ -19,7 +19,8 @@ These rules apply to new or requested changes. Do not migrate existing working c
 | --- | --- | --- |
 | Type hints | Use `X \| None` and `A \| B` (Python 3.10+) | Use `typing.Optional` or `typing.Union` |
 | Dict merging | `merged = defaults \| overrides` | `{**defaults, **overrides}`, or `defaults.update(overrides)` to build a merged value |
-| PDFs | `pypdfium2` | `pdf2image`, PyMuPDF (`fitz`) |
+| Reading or rendering PDFs | Prefer `pypdfium2` | `pdf2image` or PyMuPDF (`fitz`), because of their licenses |
+| Writing PDFs | A license-compatible PDF generation library, or pre-rendered HTML printed by a headless browser | PyMuPDF (`fitz`) |
 | FastAPI dependencies | `Annotated[T, Depends(fn)]` | `Depends()` as a parameter default |
 | Async apps | Async database drivers and async ORM sessions | Synchronous drivers or blocking calls inside async handlers |
 | Logging | Standard `logging` with `logging.getLogger(__name__)`; copy the bundled log config into the app | `print()` for application logging, a freshly invented log format, or a runtime path into this skill |
@@ -66,12 +67,17 @@ defaults.update(overrides)
 
 ## PDF Libraries
 
-When working with PDFs in Python, use `pypdfium2`. Do not use `pdf2image` or PyMuPDF (`fitz`).
+**Reading PDFs and rendering pages to images:** prefer `pypdfium2`. Avoid `pdf2image` and PyMuPDF (`fitz`) because of their licenses: PyMuPDF is AGPL-licensed (or commercial), and `pdf2image` depends on GPL-licensed Poppler. Either can impose obligations on a project that does not otherwise accept them.
 
 Good:
 
 ```python
 import pypdfium2 as pdfium
+
+pdf = pdfium.PdfDocument("input.pdf")
+page = pdf[0]
+text = page.get_textpage().get_text_range()
+image = page.render(scale=2).to_pil()
 ```
 
 Bad:
@@ -80,6 +86,25 @@ Bad:
 from pdf2image import convert_from_path
 import fitz
 ```
+
+**Writing or generating PDFs:** `pypdfium2` may not be enough. Use another PDF generation library, or render pre-built HTML to PDF with a headless browser. Before adding a library, check that its license fits the project, and still avoid PyMuPDF.
+
+```python
+from playwright.async_api import async_playwright
+
+
+async def html_to_pdf(html: str) -> bytes:
+    async with async_playwright() as playwright:
+        browser = await playwright.chromium.launch()
+        try:
+            page = await browser.new_page()
+            await page.set_content(html, wait_until="networkidle")
+            return await page.pdf(format="A4", print_background=True)
+        finally:
+            await browser.close()
+```
+
+Escape untrusted values when building the HTML, and do not let rendered content load arbitrary external resources.
 
 ## Testing
 
@@ -110,7 +135,8 @@ Stop and re-read the rule if you think or see:
 
 - "Use `typing.Optional` because the old style is familiar."
 - "Merge with `{**a, **b}` or `update()`, it is what everyone writes."
-- "Use `pdf2image` or PyMuPDF (`fitz`) for Python PDF work because they are familiar."
+- "Use `pdf2image` or PyMuPDF (`fitz`) to read or render PDFs because they are familiar."
+- "`pypdfium2` cannot write this PDF, so any library will do." Check the license first.
 - "Put `Depends(...)` as the default value, it is shorter."
 - "Use a synchronous database driver inside an async API or worker."
 - "Use `print()` for application logging."
@@ -127,7 +153,7 @@ Stop and re-read the rule if you think or see:
 | Rationalization | Response |
 | --- | --- |
 | "The legacy syntax still works, so it is fine." | Working code is not the same as current convention. Use the modern Python syntax unless a real constraint requires otherwise. |
-| "The PDF library does not matter as long as it renders pages." | For Python PDF work, use `pypdfium2`; avoid `pdf2image` and PyMuPDF (`fitz`). |
+| "The PDF library does not matter as long as it renders pages." | Licenses matter. Prefer `pypdfium2` for reading and rendering; avoid AGPL PyMuPDF (`fitz`) and Poppler-based `pdf2image`. |
 | "This async endpoint only does one blocking call." | Blocking calls in async paths are still event-loop hazards. Use async drivers and async ORM/database APIs. |
 | "I will set up Python logging later after the app starts." | Copy and apply the bundled `log-config.json` into the app repository unless another preference is specified. FastAPI apps pass that app-local config to Uvicorn so startup logs use the configured format. |
 | "I'll define this internal contract as a `Protocol` so implementations stay flexible." | Prefer concrete typed external classes, framework contracts/registration, `abc.ABC`, or standard inheritance when readers need to find implementers. Use `Protocol` only when a concrete alternative is insufficient and the structural boundary is intentionally small. |
@@ -135,7 +161,8 @@ Stop and re-read the rule if you think or see:
 ## Common Mistakes
 
 - Keeping outdated Python style because it still runs, instead of using the current convention.
-- Reaching for `pdf2image` or PyMuPDF (`fitz`) for Python PDF work instead of `pypdfium2`.
+- Reaching for `pdf2image` or PyMuPDF (`fitz`) to read or render PDFs instead of `pypdfium2`.
+- Forcing PDF generation through `pypdfium2` when a license-compatible generation library or a headless browser fits better, or adding a generation library without checking its license.
 - Using synchronous database operations in async request handlers or workers.
 - Using `print()` logging in application code.
 - Skipping the bundled `log-config.json` template for a Python app when the user or project has not specified another logging preference.

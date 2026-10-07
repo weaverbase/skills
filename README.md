@@ -14,6 +14,13 @@ Use when defining implementation scope, handling ambiguous requirements or risky
 - Make the smallest coherent change and stop before unapproved contract or destructive changes
 - Preserve security guarantees, verify behavior, and report only checks actually run
 
+### `commit-messages`
+
+Use when writing, amending, or reviewing git commit messages.
+
+- Format messages as `<type>(<optional scope>): <short description>`
+- Add an optional body and footers after a blank line
+
 ### `designing-cohesive-services`
 
 Use when implementing or changing application operations or how they are grouped into services.

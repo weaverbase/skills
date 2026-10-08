@@ -32,7 +32,7 @@ Read every applicable reference before editing, reviewing, or giving implementat
 | Collections | Use `.map()`, `.filter()`, `.reduce()`, `.find()` | Write a `for` loop where an array method states the intent better |
 | Tests | Use `vitest` or `jest` and add focused tests when behavior changes | Treat a manual check or urgency as a replacement for tests |
 | React / Next.js | Function components; server-first App Router with small client boundaries; version-aware caching | Ordinary class-based UI; Pages Router APIs in App Router work; blanket caching defaults |
-| Node.js | `node:` import prefix, promise-based `node:fs/promises` | Bare core imports, callback or synchronous file APIs in application code |
+| Node.js | `node:` import prefix, promise-based `node:fs/promises` | Bare core imports, synchronous file APIs in concurrent paths, callbacks for ordinary sequential async work without a concrete reason |
 
 ## Modules
 

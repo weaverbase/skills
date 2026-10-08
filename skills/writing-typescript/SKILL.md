@@ -31,7 +31,7 @@ Read every applicable reference before editing, reviewing, or giving implementat
 | Async | Use `async`/`await` | Chain `.then()` by default |
 | Collections | Use `.map()`, `.filter()`, `.reduce()`, `.find()` | Write a `for` loop where an array method states the intent better |
 | Tests | Use `vitest` or `jest` and add focused tests when behavior changes | Treat a manual check or urgency as a replacement for tests |
-| React / Next.js | Function components, hooks, App Router for new work | Class components, Pages Router for new App Router work |
+| React / Next.js | Function components; server-first App Router with small client boundaries; version-aware caching | Ordinary class-based UI; Pages Router APIs in App Router work; blanket caching defaults |
 | Node.js | `node:` import prefix, promise-based `node:fs/promises` | Bare core imports, callback or synchronous file APIs in application code |
 
 ## Modules

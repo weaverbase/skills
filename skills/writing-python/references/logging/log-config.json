@@ -6,12 +6,12 @@
       "default": {
           "()": "uvicorn.logging.DefaultFormatter",
           "fmt": "%(asctime)s %(levelprefix)s %(message)s",
-          "use_colors": true
+          "use_colors": false
       },
       "access": {
           "()": "uvicorn.logging.AccessFormatter",
           "fmt": "%(asctime)s %(levelprefix)s %(client_addr)s - '%(request_line)s' %(status_code)s",
-          "use_colors": true
+          "use_colors": false
       }
   },
   "handlers": {

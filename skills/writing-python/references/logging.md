@@ -4,6 +4,8 @@ Use the bundled logging configuration as the default template for Python apps un
 
 Bundled template: [logging/log-config.json](logging/log-config.json)
 
+Colors are off by default (`use_colors: false`) because logs are usually collected from containers, where ANSI escape codes corrupt aggregated output; enable them only in a local developer copy.
+
 ## Default Rules
 
 - Copy or apply the bundled `log-config.json` into the user's app repository before referencing it from app code, startup commands, Dockerfiles, or deployment config.

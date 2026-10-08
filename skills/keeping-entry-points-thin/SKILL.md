@@ -100,7 +100,7 @@ class DuplicateUserError(Exception):
 
 
 class Users:
-    def register(self, user: CreateUser) -> CreatedUser:
+    async def register(self, user: CreateUser) -> CreatedUser:
         ...  # may raise DuplicateUserError; other user operations live here too
 
 
@@ -109,12 +109,12 @@ def get_users() -> Users:
 
 
 @router.post("/users", response_model=CreatedUser)
-def create_user(
+async def create_user(
     user: CreateUser,
     users: Annotated[Users, Depends(get_users)],
 ) -> CreatedUser:
     try:
-        return users.register(user)
+        return await users.register(user)
     except DuplicateUserError as exc:
         raise HTTPException(status_code=409, detail="User already exists") from exc
 ```

@@ -102,16 +102,16 @@ class UserAlreadyExists(Exception):
     pass
 
 
-def create_user(data: CreateUser) -> User:
-    if users.exists_by_email(data.email):
+async def create_user(data: CreateUser) -> User:
+    if await users.exists_by_email(data.email):
         raise UserAlreadyExists(data.email)
     ...
 
 
 @router.post("/users", response_model=UserOut, status_code=201)
-def post_user(body: CreateUser) -> User:
+async def post_user(body: CreateUser) -> User:
     try:
-        return create_user(body)
+        return await create_user(body)
     except UserAlreadyExists:
         raise HTTPException(status_code=409, detail="Email already registered")
 ```

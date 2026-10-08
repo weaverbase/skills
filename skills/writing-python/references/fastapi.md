@@ -51,14 +51,18 @@ Use `Annotated` with `Depends` for FastAPI dependencies. Avoid `Depends()` direc
 Good:
 
 ```python
+from collections.abc import AsyncIterator
 from typing import Annotated
 
 from fastapi import Depends
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+SessionLocal: async_sessionmaker[AsyncSession]  # created at startup
 
 
-async def get_db() -> AsyncSession:
-    ...
+async def get_db() -> AsyncIterator[AsyncSession]:
+    async with SessionLocal() as session:
+        yield session
 
 
 async def endpoint(db: Annotated[AsyncSession, Depends(get_db)]):

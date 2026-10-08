@@ -40,7 +40,7 @@ Use async database drivers and async ORM methods in async applications. Avoid sy
 Good examples:
 
 - PostgreSQL: `asyncpg`
-- MongoDB: `motor`
+- MongoDB: `pymongo` async API (`AsyncMongoClient`); `motor` is deprecated
 - MySQL/MariaDB: `asyncmy`
 - SQLAlchemy: async sessions and async queries
 

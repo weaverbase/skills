@@ -14,7 +14,7 @@ Use when defining implementation scope, handling ambiguous requirements or risky
 - Make the smallest coherent change and stop before unapproved contract or destructive changes
 - Preserve security guarantees, verify behavior, and report only checks actually run
 
-### `commit-messages`
+### `writing-commit-messages`
 
 Use when writing, amending, or reviewing git commit messages.
 
@@ -103,6 +103,8 @@ For an endpoint backed by a database, service design, thin entry points, boundar
 ## Migration
 
 `using-weaverbase` has been replaced by the focused skills above and is no longer provided. Existing users should install the full set or select the skills relevant to their work. The former shared references now live inside their owning skills.
+
+`commit-messages` has been renamed to `writing-commit-messages`. Existing users should reinstall it under the new name, for example `npx skills add weaverbase/skills@writing-commit-messages`.
 
 ## Install
 

@@ -1,13 +1,13 @@
 ---
 name: designing-sql-schemas
-description: Use when writing or changing SQL schemas, table definitions, migrations, or queries; choosing PostgreSQL column types for JSON or timestamps; choosing a database driver or ORM API; building SQL that includes user input; or planning a migration that drops, truncates, narrows, or rewrites existing data.
+description: Use when writing or changing SQL schemas, table definitions, migrations, queries, or database transactions; choosing PostgreSQL column types for JSON or timestamps; choosing a database driver or ORM API; building SQL that includes user input; deciding where to commit or where to send emails, webhooks, or API calls relative to a transaction; or planning a migration that drops, truncates, narrows, or rewrites existing data.
 ---
 
 # Designing SQL Schemas
 
 ## Overview
 
-Choose database types, access APIs, and migration steps that preserve correctness and schema history.
+Choose database types, access APIs, transaction boundaries, and migration steps that preserve correctness and schema history.
 
 These rules apply to new or requested changes. Do not rewrite existing working schemas or queries solely to match them.
 
@@ -18,6 +18,7 @@ These rules apply to new or requested changes. Do not rewrite existing working s
 | JSON columns (PostgreSQL) | `JSONB` | `JSON`, unless a specific compatibility constraint requires it |
 | Timestamps that identify instants (PostgreSQL) | `TIMESTAMPTZ` | Timezone-less `TIMESTAMP` for an instant |
 | Database access API | Async API by default; in Go, context-aware calls | Blocking calls in async code |
+| Transactions | The owning operation commits; external effects go before or after it | Helpers that commit on their own; emails or API calls inside the transaction |
 | Applied migrations | Add a new migration | Edit a migration that has already been applied |
 | Changes that can lose data | Additive steps, and state what is lost | A silent drop, truncate, or narrowing |
 | User-supplied values in SQL | Bound parameters or ORM bindings | String-built SQL |
@@ -58,6 +59,21 @@ func GetOrder(ctx context.Context, db *pgxpool.Pool, id uuid.UUID) (Order, error
 }
 ```
 
+## Transactions
+
+- **The owning operation commits.** The function that owns the behavior opens and commits the transaction. Helpers and repositories accept the session or transaction and never commit on their own; otherwise the operation cannot be atomic.
+- **Rollback does not undo external effects.** If an email, webhook, or API call succeeds and the commit then fails, the outside world keeps a change the database lost. Put a precondition call (address check, quote) before the transaction, and a notification (email, webhook, event) after commit. When the effect must match the row, such as a payment, commit a `pending` row, make the call, then update it to `paid` or `failed`.
+- **Keep transactions short.** A slow external call inside one holds a connection and row locks. For a small app where the call is fast and an occasional mismatch is cheap, a call inside the transaction is an acceptable shortcut.
+- **Errors roll back.** Let an error inside a transaction roll it back and propagate. Do not catch it, continue, and commit a half-done change.
+
+```python
+async def place_order(session: AsyncSession, mailer: Mailer, data: NewOrder) -> Order:
+    async with session.begin():  # commits on exit, rolls back on error
+        order = await orders.insert(session, data)  # helper uses the session, never commits
+    await mailer.send_confirmation(order.id)  # after commit
+    return order
+```
+
 ## Migrations
 
 - Change the schema with a new migration. Never edit one that has already been applied: other environments already ran the old version and will silently diverge. Fix mistakes forward.
@@ -88,6 +104,8 @@ await session.execute(text(f"SELECT id, status FROM orders WHERE customer_id = '
 | --- | --- |
 | "`JSON` or `TIMESTAMP` is close enough." | Use `JSONB` and `TIMESTAMPTZ` unless a concrete constraint requires otherwise. |
 | "A sync driver is simpler, and it is only one call." | Default to the async API (context-aware in Go). One blocking call in async code still blocks the event loop. |
+| "The repository can just commit so the caller does not have to." | The owning operation commits. Helpers use its session. |
+| "Send the email inside the transaction; if it fails we roll back." | Rollback cannot unsend it if the commit fails later. Send after commit. |
 | "Just edit the old migration; it is a small fix." | Add a new migration. |
 | "Drop the old column in the same step." | Add, backfill, switch, then drop, and say what is removed. |
 | "The value comes from our own UI, so concatenating is fine." | Bind it. Allowlist identifiers such as sort columns. |

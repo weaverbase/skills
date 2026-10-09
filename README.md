@@ -30,13 +30,13 @@ Use when implementing or changing HTTP handlers, server actions, CLI commands, j
 - Services take domain types, return typed results, and raise domain errors, never transport exceptions
 - Interfaces map domain errors to HTTP status or exit code; a new interface never changes a service
 
-### `handling-transactions-and-side-effects`
+### `handling-distributed-consistency`
 
-Use when changing transactions, external writes, event delivery, retries, idempotency, or recovery from partial failure.
+Advanced. Use when effects must not be lost, code retries automatically, concurrent requests contend for the same data, or a workflow changes an external system in several steps.
 
-- Let operations own short transactions and race-sensitive checks
-- Publish after commit and use durable intent or an outbox when needed
-- Make automatic retries safe, leave user-initiated retry policy to the project, and verify external outcomes before finalizing
+- Use an outbox when an effect must survive a crash after commit
+- Make automatic retries safe; leave user-initiated retry policy to the project
+- Guard races only on contended, costly data, and reconcile multi-step external changes
 
 ### `validating-at-boundaries`
 
@@ -81,9 +81,10 @@ Use when changing Dockerfiles or Docker Compose configuration.
 
 ### `designing-sql-schemas`
 
-Use when changing SQL schemas, migrations, JSON/timestamp columns, or database query APIs.
+Use when changing SQL schemas, migrations, transactions, JSON/timestamp columns, or database query APIs.
 
 - Prefer PostgreSQL `JSONB` and timezone-aware timestamps
+- Let the owning operation commit, and keep external effects before or after the transaction
 - Add migrations rather than editing applied ones, and prefer additive steps over data-losing ones
 - Default to async database APIs (context-aware calls in Go) and parameterize SQL
 

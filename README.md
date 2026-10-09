@@ -84,8 +84,8 @@ Use when changing Dockerfiles or Docker Compose configuration.
 Use when changing SQL schemas, migrations, JSON/timestamp columns, or database query APIs.
 
 - Prefer PostgreSQL `JSONB` and timezone-aware timestamps
-- Add migrations rather than editing applied ones, and stop before unapproved destructive changes
-- Parameterize SQL and avoid blocking database APIs in async paths
+- Add migrations rather than editing applied ones, and prefer additive steps over data-losing ones
+- Default to async database APIs (context-aware calls in Go) and parameterize SQL
 
 ## Works Well Together
 

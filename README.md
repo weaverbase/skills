@@ -23,21 +23,20 @@ Use when writing, amending, or reviewing git commit messages.
 
 ### `designing-cohesive-services`
 
-Use when implementing or changing application operations or how they are grouped into services.
+Use when adding business logic to the service layer or deciding how it is grouped.
 
 - Choosing between a cohesive service method, standalone function, query module, and pure helper
-- Grouping related operations without pass-through services or mandatory architectural layers
-- Keeping operation signatures transport-neutral with native values and sentinel/typed errors
-- Enforcing business validation and authorization in operations against current state
+- Grouping operations by shared state, resource, or invariant
+- Avoiding pass-through wrappers, class-per-action services, and mandatory layers
 
 ### `keeping-entry-points-thin`
 
 Use when implementing or changing HTTP handlers, server actions, CLI commands, jobs, or workers.
 
-- Limiting entry points to parsing, authentication, calling an operation, and translating the result
-- Keeping data access, including read-only queries, out of handlers
-- Sharing the same operation across HTTP, CLI, and workers
-- Mapping expected errors at the boundary and logging unexpected errors once
+- Business logic in the service layer; entry points validate, call the service, and map output
+- Litmus: callable unchanged from CLI, API, and job means it belongs in the service layer
+- Services take domain types, return typed results, and raise domain errors, never transport exceptions
+- Interfaces map domain errors to HTTP status or exit code; a new interface never changes a service
 
 ### `handling-transactions-and-side-effects`
 
@@ -45,7 +44,7 @@ Use when changing transactions, external writes, event delivery, retries, idempo
 
 - Let operations own short transactions and race-sensitive checks
 - Publish after commit and use durable intent or an outbox when needed
-- Make retries recoverable and verify external outcomes before finalizing
+- Make automatic retries safe, leave user-initiated retry policy to the project, and verify external outcomes before finalizing
 
 ### `validating-at-boundaries`
 

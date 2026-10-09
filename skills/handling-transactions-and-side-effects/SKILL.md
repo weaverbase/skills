@@ -9,20 +9,24 @@ description: Use when writing or changing code that commits or rolls back a data
 
 An operation that changes state decides where the transaction starts and ends, and when anything outside the database may happen. Getting this wrong produces duplicate emails, lost events, lost updates, and half-applied changes that look healthy.
 
-**Core principle:** Commit first, then affect the outside world, and make every retry safe. Never assume a step either fully happened or fully did not.
+**Core principle:** Commit first, then affect the outside world, and make automatic retries safe. Never assume a step either fully happened or fully did not.
 
 These rules apply to new or requested changes. Do not rewrite existing working code solely to match them.
+
+Match the protection to the realistic risk. Guard races and edge cases that the code's actual usage makes plausible and that would cause real harm (lost money or stock, duplicate records that break invariants, wrong access). Do not add locks, isolation changes, conflict handling, or extra branches for hypothetical interleavings in code that is not concurrently written, or where a rare wrong outcome is cheap and visible. When you notice such a risk but leave it unguarded, mention it in the report instead of fixing it unasked.
 
 ## Quick Reference
 
 | Situation | Rule |
 | --- | --- |
 | Who commits? | The owning operation defines the transaction boundary. Persistence helpers take the transaction or session and never commit independently. |
-| Check-then-write that races (stock, balance, uniqueness, status, ownership, permission) | Keep the check and change in one transaction, protected by a conditional write, appropriate row locks, a constraint, or isolation that prevents the race. A transaction alone is not enough. |
+| Check-then-write on data that concurrent requests realistically contend for, where a wrong outcome is costly (stock, balance, uniqueness, access grants) | Keep the check and change in one transaction, protected by a conditional write, appropriate row locks, a constraint, or isolation that prevents the race. A transaction alone is not enough. |
+| Race that is unlikely in practice, or whose wrong outcome is cheap and visible (single-user tool, admin script, last-write-wins field) | Do not add protection. Rely on existing constraints; note the risk in the report if it seems worth a follow-up. |
 | Transaction length | Keep transactions short. No network or other external calls inside them. |
 | Email, webhook, event, or any externally visible effect | Perform it only after commit. When delivery must be atomic with the write, commit an outbox row (or an existing equivalent) with the write and deliver from it afterward. |
-| Retried job, redelivered message, or partial failure | Guard with an idempotency key, unique constraint, or recoverable state. Do not assume a retry is harmless. |
-| Fan-out or parallel work | Bound the concurrency, propagate cancellation and timeouts, and keep shared state race-safe. |
+| Code that retries automatically (retried job, redelivered message, retry loop, outbox dispatcher) | Guard with an idempotency key, unique constraint, or recoverable state. Do not assume an automatic retry is harmless. |
+| Failure surfaced to the user as a handled error | Retry policy belongs to the project. Return the error; do not add idempotency machinery unless the project asks for it. |
+| Fan-out or parallel work the code actually performs | Bound the concurrency, propagate cancellation and timeouts, and keep shared state race-safe. |
 | Error inside a transaction | Let it roll back and propagate. Do not catch, continue, and commit a half-done change. |
 | Multi-step change to an external system | See "External Workflows and Reconciliation". |
 
@@ -34,7 +38,7 @@ The operation that owns the behavior opens, commits, and rolls back the transact
 
 ### Races
 
-Any decision that depends on current state and can race with another request (available stock, current status, uniqueness, ownership, permissions) must be protected together with the change it guards. Merely putting a read and write inside one transaction, especially at READ COMMITTED isolation, does not prevent another writer from invalidating the check. Use a conditional write, appropriate row locks, a relevant constraint, or an isolation level that prevents the anomaly; handle conflicts and serialization failures. Prefer a conditional write or a unique constraint over unprotected read-then-write, and check the affected-row count rather than assuming success. A check done earlier in middleware or in an earlier query is a hint, not a guarantee.
+Protect a decision together with the change it guards when concurrent requests realistically contend for the same data and a wrong outcome would cause real harm: overselling stock, overdrawing a balance, a duplicate that breaks a uniqueness invariant, or granting access that should be denied. Skip this for data that only one actor writes at a time, for low-stakes fields where last write wins is acceptable, and for scripts and tools that do not run concurrently. Merely putting a read and write inside one transaction, especially at READ COMMITTED isolation, does not prevent another writer from invalidating the check. Use a conditional write, appropriate row locks, a relevant constraint, or an isolation level that prevents the anomaly; handle conflicts and serialization failures. Prefer a conditional write or a unique constraint over unprotected read-then-write, and check the affected-row count rather than assuming success. A check done earlier in middleware or in an earlier query is a hint, not a guarantee.
 
 ### Short transactions, no external calls
 
@@ -46,17 +50,19 @@ Send emails, call webhooks, publish events, and enqueue jobs only after the comm
 
 ### Retries and partial failure
 
-Anything that can run twice will run twice: retried jobs, redelivered messages, repeated clicks, a crash between commit and effect. Make the second run harmless with:
+When the system itself repeats work (retried jobs, redelivered messages, retry loops, an at-least-once dispatcher, a resumed workflow after a crash), make the second run harmless with:
 
 - an idempotency key sent to the external service and stored with the record,
 - a unique constraint that turns a duplicate into a detectable conflict,
 - recoverable state (`pending`, `sent`, `failed`) that a later run can resume from.
 
-Test the retry and crash-between-steps paths, not only the happy path.
+Test the automatic retry and crash-between-steps paths, not only the happy path.
+
+When a failure is returned to the user as a handled error and the user decides whether to try again, that retry policy is the project's choice. Return a clear error and leave duplicate protection for user-initiated retries to the project's requirements; do not add idempotency keys, request deduplication, or retry logic that was not asked for.
 
 ### Concurrency and cancellation
 
-Use bounded concurrency (a worker pool, semaphore, or batch size) instead of one task per item. Pass cancellation and timeouts through to external calls so a cancelled request stops work. Protect shared in-memory state with the language's race-safe tools (locks, atomics, single-owner channels) rather than relying on timing.
+When the code fans out over many items, use bounded concurrency (a worker pool, semaphore, or batch size) instead of one task per item. Pass cancellation and timeouts through to external calls so a cancelled request stops work. When in-memory state is actually shared across concurrent tasks or threads, protect it with the language's race-safe tools (locks, atomics, single-owner channels) rather than relying on timing. Sequential code needs none of this.
 
 ## Example
 
@@ -125,13 +131,14 @@ When none of the conditions apply, a checked success response from the API's doc
 | "Clean up by deleting whatever looks leftover." | Delete only what this operation recorded creating, and only where absence is the safe state. |
 | "Use the admin credential as a fallback so the client keeps working." | Never reuse a privileged credential as a client or fallback credential. |
 | "Spawn a task per item; the runtime will cope." | Bound concurrency and propagate cancellation. |
+| "Two requests could theoretically interleave here, so add a lock and conflict handling." | Only if concurrent writes are realistic and the wrong outcome is costly. Otherwise leave the code simple and mention the risk in the report if it matters. |
 
 ## Red Flags
 
 Stop and reconsider if you see:
 
 - `commit()` inside a repository or helper.
-- `SELECT` followed by `UPDATE` with no conditional write, appropriate lock, relevant constraint, or adequate isolation, even when they share a transaction.
+- `SELECT` followed by `UPDATE` on contended, high-stakes data (stock, balance, uniqueness, access) with no conditional write, appropriate lock, relevant constraint, or adequate isolation, even when they share a transaction.
 - `fetch`, `requests`, an SDK call, or a mailer inside a transaction callback.
 - An effect scheduled before the commit has succeeded.
 - A retry loop around a non-idempotent call.

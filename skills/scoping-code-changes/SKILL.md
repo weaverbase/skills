@@ -31,6 +31,7 @@ Read the relevant code and its tests before editing. Do not guess at conventions
 - Do not refactor, rename, reformat, or reorganize unrelated working code. Mention it in the report instead.
 - Apply new rules to new or requested changes only. Never require migrating existing working code to a new convention.
 - A change the user explicitly asked for is in scope, even if it is large or touches a public contract. Do the work, and state in the report that it was requested and what it affects.
+- Handle the edge cases the request, the data, and realistic usage make likely. Do not invent hypothetical inputs, interleavings, or failure modes and add defensive branches, locks, retries, or fallbacks for them. Let unexpected cases surface as a handled error. If you spot a plausible risk outside the request, list it in the report rather than guarding it unasked.
 
 ## Stop and Report Options
 
@@ -58,7 +59,7 @@ These hold for every change, regardless of urgency:
 
 ## Verification
 
-- Test observable behavior and the important failure cases, not internal call sequences.
+- Test observable behavior and the important failure cases, not internal call sequences. Important means likely or costly in this project, not every conceivable edge case or race.
 - A behavior change or bug fix needs a focused test that fails without the change and passes with it. Manual checking and urgency are not substitutes.
 - Do not weaken, delete, or skip a valid test to get a green result. If a test is wrong, say why and fix it deliberately.
 - Do not write pass-through tests that exist only to raise coverage.
@@ -103,6 +104,7 @@ Bad:
 | Stopping to ask about every contract change, even one the user explicitly requested | Proceed with what was asked, keep to its scope, and describe the affected contract in the report. |
 | Silently widening a change to include an unrequested API, config, or schema change | Stop and report options. |
 | Refactoring or renaming nearby code because it looks untidy | Leave it; list it in the report as a follow-up. |
+| Guarding every conceivable edge case or race "to be safe" | Cover the likely and costly cases; let the rest fail as a handled error and note real risks in the report. |
 | Editing an already applied migration or overwriting data in place | Add a new change, and stop first if data could be lost. |
 | Making a failing test pass by loosening it, mocking away the thing under test, or skipping it | Fix the code, or explain why the test is wrong and change it deliberately. |
 | Adding a test that only calls a function and asserts it was called | Assert an observable result or failure instead. |

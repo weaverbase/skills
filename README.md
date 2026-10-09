@@ -71,6 +71,14 @@ Use when changing Rust error handling, string ownership, or async runtime code.
 - Borrow strings where practical instead of allocating or cloning unnecessarily
 - Follow current Tokio patterns without production `unwrap`/`expect`
 
+### `writing-go`
+
+Use when changing Go error handling, concurrency, HTTP servers, logging, tests, or module tooling.
+
+- Use the newest idioms the module's `go` directive allows (`any`, `slices`, `slog`, method-aware `ServeMux`)
+- Wrap errors with `%w`, pass `context.Context` through I/O, and give every goroutine an exit
+- Prefer the standard library, keep the project's existing choices, and start with a flat layout
+
 ### `writing-container-configs`
 
 Use when changing Dockerfiles or Docker Compose configuration.

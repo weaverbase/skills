@@ -43,8 +43,8 @@ Advanced. Use when effects must not be lost, code retries automatically, concurr
 Use when defining request/response schemas, parsing external payloads, forms, or environment configuration.
 
 - Put shape and format constraints on schemas at real boundaries
-- Pass typed values inward while keeping current-state business rules in operations
-- Use Pydantic v2 or Zod and derive related shapes without duplicating fields
+- Pass typed values inward while keeping current-state business rules in the service layer
+- Default to Pydantic v2 or Zod 4 and derive related shapes without duplicating fields
 
 ### `writing-python`
 

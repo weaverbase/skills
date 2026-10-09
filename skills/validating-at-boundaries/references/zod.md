@@ -1,6 +1,6 @@
 # Zod 4
 
-How to apply the rules in [../SKILL.md](../SKILL.md) in TypeScript with Zod. Schemas own shape and validation; application operations and components receive validated, typed values.
+How to apply the rules in [../SKILL.md](../SKILL.md) in TypeScript with Zod. Schemas own shape and validation; services and components receive validated, typed values.
 
 Examples use Zod 4 (`z.uuid()`, `z.iso.datetime()`, `z.strictObject`).
 
@@ -27,7 +27,7 @@ export type CreateBookmark = z.infer<typeof CreateBookmarkSchema>;
 ```
 
 - Derive create, update, and public variants from the shared schema with `.extend()`, `.partial()`, `.pick()`, and `.omit()`. Do not copy field definitions.
-- Use `z.strictObject` for inbound request bodies so unknown keys are rejected. Plain `z.object` strips unknown keys, which is acceptable for external API responses where new upstream fields should not break you.
+- Use `z.strictObject` for inbound request bodies so unknown keys are rejected, when the project has no other convention. Plain `z.object` strips unknown keys, which is acceptable for external API responses where new upstream fields should not break you.
 - Do not use `z.coerce.date()` for external data. It calls `new Date(value)`, so `null` silently becomes `1970-01-01` and other junk can become valid dates. Validate the string format and transform it, as `createdAt` does above.
 
 ## Update and Outbound Variants
@@ -68,7 +68,7 @@ Zod parsing belongs in route loaders, server actions, API-client adapters, form 
 
 ## Surfacing Validation Errors
 
-The boundary turns a failed parse into a 400 response or a form error. Operations raise domain errors, not validation errors.
+The boundary turns a failed parse into a 400 response or a form error. Services raise domain errors, not validation errors.
 
 ```typescript
 export async function createBookmarkHandler(request: Request): Promise<Response> {
@@ -94,11 +94,11 @@ export async function createBookmarkHandler(request: Request): Promise<Response>
 }
 ```
 
-Branching on legitimately optional or empty values is domain logic and stays in the operation. Do not repeat constraints the schema already guarantees.
+Branching on legitimately optional or empty values is domain logic and stays in the service. Do not repeat constraints the schema already guarantees.
 
 ## Environment Configuration
 
-Parse `process.env` with a schema once at startup or boundary initialization. Export the typed result and use it everywhere else. Do not hardcode configuration values, and do not read `process.env` ad hoc inside operations.
+Parse `process.env` with a schema once at startup or boundary initialization. Export the typed result and use it everywhere else. Do not hardcode configuration values, and do not read `process.env` ad hoc inside services.
 
 ```typescript
 const EnvSchema = z.object({

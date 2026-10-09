@@ -6,14 +6,6 @@ Public agent skills for applying practical engineering defaults across projects.
 
 Each skill is self-contained and can be installed independently. None requires another skill or a third-party skill collection.
 
-### `scoping-code-changes`
-
-Use when defining implementation scope, handling ambiguous requirements or risky changes, choosing checks, or reporting results.
-
-- Read repository guidance, relevant code, and tests before changing them
-- Make the smallest coherent change and stop before unapproved contract or destructive changes
-- Preserve security guarantees, verify behavior, and report only checks actually run
-
 ### `writing-commit-messages`
 
 Use when writing, amending, or reviewing git commit messages.

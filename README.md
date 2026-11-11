@@ -86,6 +86,7 @@ Use when changing Dockerfiles or Docker Compose configuration.
 - Use specific image tags, multi-stage builds, and non-root runtime users
 - Follow the current Compose Specification without a top-level `version`
 - Use mappings for environment variables and labels, quoting YAML-sensitive values
+- Limit container log growth with `json-file` `max-size` and `max-file`
 
 ### `designing-sql-schemas`
 

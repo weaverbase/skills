@@ -1,6 +1,6 @@
 ---
 name: writing-container-configs
-description: Use when writing or editing a Dockerfile, choosing a base image tag, adding a multi-stage build, deciding which user a container runs as, or writing a docker-compose.yml or compose.yaml with environment variables, labels, a top-level `version` key, or YAML values like true, 123, or null.
+description: Use when writing or editing a Dockerfile, choosing a base image tag, adding a multi-stage build, deciding which user a container runs as, or writing a docker-compose.yml or compose.yaml with environment variables, labels, logging or log rotation, a top-level `version` key, or YAML values like true, 123, or null.
 ---
 
 # Writing Container Configs
@@ -17,7 +17,7 @@ These rules apply to new or requested changes. Do not rewrite existing working c
 
 - Creating or editing a Dockerfile, choosing a `FROM` image, or deciding the runtime user.
 - Splitting build and runtime stages, or shrinking an image.
-- Creating or editing `docker-compose.yml` or `compose.yaml`, especially `environment`, `labels`, or a top-level `version`.
+- Creating or editing `docker-compose.yml` or `compose.yaml`, especially `environment`, `labels`, `logging`, or a top-level `version`.
 - Reviewing container files copied from older tutorials.
 
 ## Quick Reference
@@ -29,6 +29,7 @@ These rules apply to new or requested changes. Do not rewrite existing working c
 | Runtime user | Create or select a non-root user and switch with `USER` | Run production containers as root |
 | Compose `version` | Omit the top-level `version` key | Copy `version: "3.9"` from old examples |
 | Compose `environment` and `labels` | Use mapping syntax: `KEY: value` | Use list syntax (`- KEY=value`) by default |
+| Compose logging | Use `driver: json-file` with `max-size: "10m"`, `max-file: "3"` by default | Leave the default `json-file` driver without rotation limits |
 | YAML-sensitive values | Quote values that YAML reads as booleans, numbers, or null: `"true"`, `"123"`, `"null"` | Leave them unquoted and let the parser guess |
 
 ## Dockerfiles
@@ -102,10 +103,11 @@ Follow the current Compose Specification and use readable mapping syntax where p
 2. Use mapping syntax for environment variables and labels: `KEY: value`.
 3. Avoid list syntax for environment variables and labels unless explicitly requested or required by a named tool, platform, parser, passthrough, or legacy integration. Team habit, personal familiarity, and old examples are not compatibility requirements.
 4. Quote environment values that YAML may interpret as booleans, numbers, or null, such as `"true"`, `"false"`, `"123"`, or `"null"`.
+5. Set log rotation on each service by default: `logging.driver: json-file` with quoted `max-size: "10m"` and `max-file: "3"` options. Without `max-size`, `json-file` logs can fill the disk, and `max-file` has no effect on its own. Preserve an existing daemon-level rotation setup, a different log driver, or user- or project-specified values instead of overriding them.
 
 ### Examples
 
-Good: environment variables and labels use mapping syntax.
+Good: environment variables and labels use mapping syntax, and logs have rotation limits.
 
 ```yaml
 services:
@@ -117,6 +119,27 @@ services:
     labels:
       com.example.description: "My application"
       com.example.version: "1.0"
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+```
+
+For multiple services, optionally share the logging block with an `x-logging` extension and a YAML anchor:
+
+```yaml
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    logging: *default-logging
+  worker:
+    logging: *default-logging
 ```
 
 Bad defaults: obsolete `version` and list syntax without an explicit request or compatibility reason. In this list form, entire `KEY=value` entries are strings; the YAML coercion warning applies to mapping values, not to the `true` or `3` substrings below.
@@ -154,6 +177,8 @@ If a user explicitly asks for classic syntax (`version`, env lists), explain tha
 - Preserving obsolete Compose syntax (`version: "3.9"`, `KEY=value` lists) because it appears in old examples.
 - Treating familiarity with old Compose syntax as a compatibility requirement. "Legacy reason" means a concrete tool or platform constraint.
 - Leaving values like `true`, `3`, or `null` unquoted in Compose `environment`, so YAML converts them to non-strings.
+- Leaving Compose services on the default `json-file` driver without `max-size`, so logs can fill the disk.
+- Setting `max-size`/`max-file` without `driver`, which fails on hosts whose default driver does not support them.
 
 ## Red Flags
 

@@ -97,6 +97,14 @@ Use when changing SQL schemas, migrations, transactions, JSON/timestamp columns,
 - Add migrations rather than editing applied ones, and prefer additive steps over data-losing ones
 - Default to async database APIs (context-aware calls in Go) and parameterize SQL
 
+### `executing-plans-with-subagents`
+
+Use when executing an approved multi-task plan with implementer and reviewer subagents.
+
+- One implementer and one bounded, read-only reviewer per task
+- The coordinator triages findings; only confirmed blockers get one fix wave and a targeted re-review
+- Unresolved blockers stop and escalate instead of shipping
+
 ## Works Well Together
 
 For an endpoint backed by a database, service design, thin entry points, boundary validation, and transaction handling cover different decisions. Add the relevant language skill for stack conventions. These combinations are suggestions, not dependencies.

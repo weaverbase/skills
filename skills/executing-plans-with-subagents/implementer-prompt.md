@@ -27,7 +27,7 @@ Rules:
 - If a required test cannot run, diagnose minimally; report the cause and its impact on verification. Do not claim it passed.
 - Preserve unrelated working-tree edits; do not revert user changes.
 - Do not spawn agents or reviewers; the coordinator will arrange independent review.
-- Do not commit unless explicitly instructed.
+- Do not commit.
 - Ask for essential missing context rather than inventing requirements.
 
 Report in this format:

@@ -23,6 +23,8 @@ Important: A bug found outside the diff can still be critical if the feature wou
 
 Collect approved blockers into **one cohesive instruction**:
 
+Before dispatch, the coordinator checkpoints approved blockers, exact scope, pre-fix baseline, phase `FIXING`, and the incremented `Fix Waves Used` in the [persistent ledger](progress-ledger.md). Reserve within the saved authorized limit (default one); failed persistence stops dispatch. Pass the ledger/runtime subtree as out of scope to fixers. On recovery, inspect edits and reports and continue only unfinished corrections in the same reserved wave; no counter reset, repeated completed fixes, or second correction cycle under that reservation. Ambiguous execution state requires clarification.
+
 ```text
 Fix ONLY these coordinator-approved BLOCKERs for task {ID}:
 {NUMBERED_FINDINGS_WITH_EVIDENCE}
@@ -39,7 +41,20 @@ Constraints:
 - Do not spawn subagents or request your own review.
 ```
 
-Then dispatch **one targeted re-review**:
+Persist fix results and phase `VERIFYING`; run outstanding focused checks and save their results, then persist phase `REVIEWING` / targeted before dispatching **one targeted re-review**. Save its completion before advancing. Never rerun a completed initial review on recovery.
+
+`FIX_DIFF` compares a saved **pre-fix** snapshot with the post-fix snapshot, not the original task baseline. Use the runtime-excluding `snap` from [preflight](../SKILL.md#0-preflight), from the resolved target repository root:
+
+```sh
+PRE_FIX=$(snap) || exit 1      # persist before reserving/dispatching this wave
+# After the authorized corrections (reuse saved PRE_FIX on recovery):
+POST_FIX=$(snap) || exit 1
+git diff "$PRE_FIX" "$POST_FIX" -- || exit 1
+```
+
+The original task baseline remains unchanged for task acceptance and the initial review boundary; pre-fix evidence only isolates the authorized corrections.
+
+Targeted review instruction:
 
 ```text
 TASK BRIEF / ACCEPTANCE CRITERIA:
@@ -57,12 +72,10 @@ fixes introduced directly related regressions. Read-only. Do not start a
 new broad review. Report PASS or BLOCK with concrete evidence.
 ```
 
-If blockers remain after the wave: `BLOCKED`, provide evidence and smallest viable next step. A further wave requires an explicit coordinator/user decision and a newly stated finite budget; never repeat automatically.
+If blockers remain after the wave and targeted re-review: persist `BLOCKED`, evidence, consumed budget and smallest viable next step. A further wave requires **explicit user authorization** and a newly stated finite budget recorded before dispatch; never repeat automatically or infer permission from recovery.
 
-## Ledger (in conversation or a project file when useful)
+## Persistent decisions and evidence
 
-| Task | Status | Required checks | Blockers | Deferred observations |
-| --- | --- | --- | --- | --- |
-| T1 | REVIEWING | command + result | finding ID | note ID |
+Use the mandatory [progress-ledger protocol](progress-ledger.md), not a conversation-only table. The coordinator alone persists each task's review disposition, approved blockers/scope, verification evidence, next action, deferred notes, and used/authorized wave budget. `PASS_WITH_NOTES` becomes `PASS_WITH_DEFERRED` only after coordinator triage confirms the retained findings are nonblocking; `BLOCK` remains evidence for triage, not an automatic fix list. Required acceptance left `UNVERIFIED` still blocks independent review and task completion, even if a missing check was documented; a justified alternative must establish acceptance.
 
-Do not represent deferred notes as mandatory tasks. Do not let deferred notes reenter the work queue without authorization.
+Do not represent deferred notes as mandatory tasks. Preserve their disposition across recovery; new evidence or explicit authorization is required to reconsider them, not merely another session or a pre-existing unrelated failure. See the same ledger protocol for feature-verification checkpoints; final delivery creates no new fix budget.

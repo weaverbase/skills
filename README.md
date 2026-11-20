@@ -97,6 +97,13 @@ Use when changing SQL schemas, migrations, transactions, JSON/timestamp columns,
 - Add migrations rather than editing applied ones, and prefer additive steps over data-losing ones
 - Default to async database APIs (context-aware calls in Go) and parameterize SQL
 
+### `writing-implementation-plans`
+
+Use when writing, repairing, or revising a multi-step implementation plan, not when executing one or making a straightforward edit.
+
+- Ground the design in the repository and discuss material choices and the scope with the user before finalizing
+- Define bounded tasks with explicit dependencies, observable acceptance criteria, and planned checks
+
 ### `executing-plans-with-subagents`
 
 Use when executing an approved multi-task plan with implementer and reviewer subagents.
@@ -108,6 +115,8 @@ Use when executing an approved multi-task plan with implementer and reviewer sub
 ## Works Well Together
 
 For an endpoint backed by a database, service design, thin entry points, boundary validation, and transaction handling cover different decisions. Add the relevant language skill for stack conventions. These combinations are suggestions, not dependencies.
+
+Optionally pair `writing-implementation-plans` with `executing-plans-with-subagents`: the former writes a reviewable plan; the latter uses a durable execution ledger to track evidence and resume work. The executor also accepts compatible, approved plans written independently, with no required template or authoring skill.
 
 ## Migration
 

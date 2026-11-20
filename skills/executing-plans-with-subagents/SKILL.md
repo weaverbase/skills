@@ -24,15 +24,13 @@ If independent subagents are unavailable, state that limitation and execute the 
 
 ## Inputs / prerequisites
 
-Use when there is an approved plan with ordered tasks and explicit acceptance criteria. If missing, first write a minimal plan with acceptance criteria and obtain approval where required by the user's instruction. Do not treat reviewer suggestions as changes to an approved plan.
+Use any approved repository-local Markdown plan at a stable path that supplies the content below. No particular filename, headings, template, or authoring skill is required. If missing, first write a minimal plan with acceptance criteria and obtain approval where required by the user's instruction. Do not treat reviewer suggestions as changes to an approved plan.
 
-For each task capture:
-- Task ID and objective
-- Acceptance criteria and relevant interfaces
-- Explicit **out of scope** notes
-- File or component area and dependency context
-- Baseline commit / working-tree state; preserve pre-existing user changes
-- Minimal verification commands that exist in the repository
+- **Feature:** goal, in/out of scope, applicable shared constraints and repository context, material assumptions or risks, observable acceptance criteria, and planned integration verification where applicable.
+- **Tasks:** ordered, bounded tasks with unique, stable IDs. Each exact brief includes the objective, dependencies (or none), affected files or components, relevant interfaces, explicit out-of-scope boundaries, observable acceptance criteria, and focused checks with expected results. Include applicable shared constraints when dispatching the brief.
+- **Revisions:** keep the same path and IDs for the same logical tasks, assign fresh IDs to new tasks, and explain material changes, removals or mappings, and affected dependencies.
+
+The plan states approved intent and planned verification, not live baselines, actual results, review state, or progress. The coordinator captures and persists that evidence in the ledger. Approval comes from the user or a user-authorized workflow, not from a filename, revision digest, or recorded next action.
 
 Never overwrite or revert unrelated user changes. Committing is outside this skill; leave it to the user or their workflow.
 
@@ -42,9 +40,13 @@ Per task: **one implementer, one read-only reviewer, at most one fix wave, one t
 
 ## Execution procedure
 
+Before dispatching implementation or any review (including targeted re-review), triaging findings, authorizing or dispatching fixes, or deciding or reporting feature status, reread the relevant approved scope and acceptance criteria and the corresponding ledger record. Compare the current plan revision with the accepted `Plan Revision`; [reconcile plan or evidence changes](references/progress-ledger.md#resume-and-plan-revisions) before proceeding.
+
+Follow the ledger's [checkpoint protocol](references/progress-ledger.md#checkpoint-protocol): save material discoveries, results, and failed attempts as they are established, before relying on them in a decision or dispatch. Flush unsaved material changes before a deliberate pause or handoff when possible, and carry forward the bound worktree and plan path. Record only material evidence in the existing ledger, not a log of every tool call.
+
 ### 0. Preflight
 
-1. Resolve the target repository root and approved repository-relative plan path; read the plan and inspect Git status/history and scoped implementation evidence. Locate/init/reconcile `.agent-work/executing-plans-with-subagents/<plan-id>/progress.md` using [references/progress-ledger.md](references/progress-ledger.md). Run its resume/revision protocol on every new session and context recovery before selecting an eligible task; skip still-valid completed work.
+1. Use the [canonical ledger protocol](references/progress-ledger.md#locate-or-initialize) to resolve the exact target repository/worktree and explicitly approved repository-relative plan path, then locate the matching ledger. Initialize only for a genuinely fresh execution; stop and clarify if the binding is missing or ambiguous, the expected ledger is missing on recovery, or its identity mismatch is unexplained. On every new session and context recovery, read the plan and reconcile the ledger with scoped Git status, history, and other implementation evidence before selecting work; skip still-valid completed work.
 2. For each **new** task, snapshot and persist its original baseline before dispatch. On recovery reuse it; never capture partial implementation as a replacement baseline. Run this example from the resolved target repository root. It requires an existing `HEAD` commit (not unborn-repository support). A temporary index leaves the working tree and the user's staging untouched; both snapshots exclude the entire runtime subtree, even previously tracked files:
    ```sh
    REPO_ROOT=$(git rev-parse --show-toplevel) || exit 1

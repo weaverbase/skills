@@ -108,9 +108,9 @@ Use when writing, repairing, or revising a multi-step implementation plan, not w
 
 Use when executing an approved multi-task plan with implementer and reviewer subagents.
 
-- One implementer and one bounded, read-only reviewer per task
-- The coordinator triages findings; only confirmed blockers get one fix wave and a targeted re-review
-- Unresolved blockers stop and escalate instead of shipping
+- One implementer and one initial bounded, read-only review per task
+- Confirmed in-scope blockers can receive up to three fix waves by default, each with focused checks and a targeted re-review; wave 3 uses `escalation-fixer` when available and eligible
+- Blockers that cannot be resolved within scope and budget stop the affected task instead of shipping
 
 ## Works Well Together
 

@@ -6,7 +6,7 @@ After completing all unblocked tasks:
 2. Run relevant integration or end-to-end checks available in the project **once** (and a focused rerun after necessary corrections). Respect existing CI requirements.
 3. Classify failures as introduced, pre-existing, environment, or unknown. Do not turn infrastructure/test framework problems into an unapproved subproject.
 4. Review cross-task wiring, API contracts, migrations, security/data-integrity boundaries actually touched by this feature. Avoid repo-wide best-practices audits.
-5. For confirmed blockers, use the same coordinator triage policy and a finite, explicitly scoped fix wave; escalate if unresolved.
+5. For confirmed blockers, use the owning task's remaining fix-wave budget and the same [triage, fixer selection, and targeted re-review policy](triage-and-fix.md). Final verification grants no extra waves; if no scoped correction can proceed within the saved budget, report the blocker.
 6. Report honest status. A partially verified feature is not `DONE` when mandatory criteria are unverified.
 
 ## Delivery format

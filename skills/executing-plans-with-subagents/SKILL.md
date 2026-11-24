@@ -15,10 +15,10 @@ Deliver the approved feature accurately and safely. The goal is **verified accep
 
 ## Roles and authority
 
-- **Coordinator (you):** owns scope, triage, budget, decisions, persistent task ledger (sole writer), and final delivery. Only the coordinator can authorize a fix, expansion of scope, or change to the plan, within user authorization; only the user can extend the fix-wave budget.
+- **Coordinator (you):** owns scope, triage, budget, decisions, persistent task ledger (sole writer), and final delivery. Authorize in-scope fixes within the saved budget without asking the user per wave. Only the user can approve a material scope or plan change or extend the saved budget.
 - **Implementer subagent:** implements exactly one task, runs focused verification and self-checks; does not spawn reviewers or other subagents.
 - **Reviewer subagent:** independently reviews **only the task's baseline-to-current diff**, the task brief, and relevant immediate context. Read-only; reports findings and evidence; never edits code, dispatches agents, or creates new requirements.
-- **Fixer:** preferably the same implementer if resumable; makes **only coordinator-approved corrections**. No opportunistic cleanup.
+- **Fixer:** makes **only coordinator-approved corrections**. Prefer the same implementer if resumable, except on wave 3 when an eligible `escalation-fixer` is available. No opportunistic cleanup.
 
 If independent subagents are unavailable, state that limitation and execute the same roles sequentially without claiming independent review or marking its completion requirement met.
 
@@ -36,7 +36,7 @@ Never overwrite or revert unrelated user changes. Committing is outside this ski
 
 ## Review budget
 
-Per task: **one implementer, one read-only reviewer, at most one fix wave, one targeted re-review.** A blocker still unresolved after that → `BLOCKED` and escalate, **never accept**. Only the user can authorize another bounded wave. Details and templates: [references/triage-and-fix.md](references/triage-and-fix.md).
+Per task: **one initial read-only review, up to three fix waves by default, and one independent targeted re-review per wave.** Use wave 2 or 3 only for confirmed in-scope blockers that remain or directly related blocking regressions from a fix. Use `escalation-fixer` on wave 3 when available and eligible; otherwise use the normal fixer. Blockers that cannot be resolved within the approved scope and saved budget → `BLOCKED`, **never accept**. Only the user can extend the saved limit. Details and templates: [references/triage-and-fix.md](references/triage-and-fix.md).
 
 ## Execution procedure
 
@@ -93,7 +93,7 @@ Include only:
 
 If task changes are not separable from existing work, disclose that and review manually scoped changed files/hunks; do not imply perfect isolation.
 
-### 3. Dispatch exactly one task reviewer
+### 3. Dispatch the one initial task review
 
 Read [task-reviewer-prompt.md](task-reviewer-prompt.md). Make it **read-only** if tooling permits. Reviewer returns `PASS`, `PASS_WITH_NOTES`, or `BLOCK`, with evidence for every `BLOCKER`. No reviewer-written patches.
 
@@ -107,13 +107,13 @@ Classify every finding as `BLOCKER`, `UNKNOWN`, or `DEFER` using [references/tri
 
 Persist the review outcome, task-keyed decisions and deferred evidence before any fix dispatch. Map `PASS_WITH_NOTES` to ledger `PASS_WITH_DEFERRED` only after nonblocking triage; `BLOCK` is evidence, not an automatic fix list.
 
-### 5. One fix wave → targeted re-review
+### 5. Bounded fix waves → targeted re-review
 
 Use the fix-wave and re-review templates in [references/triage-and-fix.md](references/triage-and-fix.md); **do not reopen a broad quality hunt**.
 
-Before dispatch, persist authorized blockers/scope, separate pre-fix baseline, phase `FIXING`, and increment `Fix Waves Used` to reserve the wave. Recovery continues only unfinished corrections in that same wave, never resets the budget. Persist fix results, phase `VERIFYING` and pending checks, then their results and phase `REVIEWING` / targeted before the one targeted re-review.
+Before each dispatch, persist authorized blockers/scope, a separate pre-fix baseline for that wave, phase `FIXING`, and increment `Fix Waves Used` to reserve the wave. Recovery continues only unfinished actions in that same wave, never resets the budget. Persist fix results, phase `VERIFYING` and pending checks, then their results and phase `REVIEWING` / targeted before that wave's one targeted re-review.
 
-If completion criteria below are met, persist `DONE`. Otherwise persist `BLOCKED` with evidence, consumed budget, a concise obstacle and smallest sensible next step. Only explicit user authorization can add a newly finite wave budget. Do not silently proceed past a blocking dependency; independent unaffected tasks may continue if safe.
+If completion criteria below are met, persist `DONE`. Otherwise, triage the targeted review and continue within the saved budget only for an evidence-backed correction that stays in scope. If no such correction can proceed or the budget is exhausted, persist `BLOCKED` with evidence, consumed budget, a concise obstacle and smallest sensible next step. Only explicit user authorization can extend the limit by a finite amount. Do not silently proceed past a blocking dependency; independent unaffected tasks may continue if safe.
 
 ### 6. Final feature verification and delivery
 

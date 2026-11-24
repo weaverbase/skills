@@ -19,11 +19,13 @@ Important: A bug found outside the diff can still be critical if the feature wou
 3. **Environment:** dependency unavailable, credentials missing, flaky service → retry/diagnose narrowly, record limitation.
 4. **Unknown:** no adequate evidence → do not claim passing verification; resolve the smallest critical uncertainty or escalate.
 
-## Default maximum: one fix wave
+## Default maximum: three fix waves
 
-Collect approved blockers into **one cohesive instruction**:
+Collect approved blockers into **one cohesive instruction per wave**. Within the saved limit, the coordinator may dispatch without asking the user again. Between waves, re-triage only unresolved confirmed in-scope blockers or blocking regressions directly caused by the previous corrections. Each new wave needs an evidence-backed next correction; a remaining slot is not a reason to repeat a failed approach under unchanged conditions, broaden the review, or change approved behavior. A missing verification prerequisite alone does not justify another wave.
 
-Before dispatch, the coordinator checkpoints approved blockers, exact scope, pre-fix baseline, phase `FIXING`, and the incremented `Fix Waves Used` in the [persistent ledger](progress-ledger.md). Reserve within the saved authorized limit (default one); failed persistence stops dispatch. Pass the ledger/runtime subtree as out of scope to fixers. On recovery, inspect edits and reports and continue only unfinished corrections in the same reserved wave; no counter reset, repeated completed fixes, or second correction cycle under that reservation. Ambiguous execution state requires clarification.
+Before dispatch, the coordinator checkpoints approved blockers, exact scope, the wave's pre-fix baseline, phase `FIXING`, and the incremented `Fix Waves Used` in the [persistent ledger](progress-ledger.md). Reserve within the saved authorized limit (default three for new tasks); failed persistence stops dispatch. Pass the ledger/runtime subtree as out of scope to fixers. On recovery, inspect edits and reports and continue only unfinished corrections in the same reserved wave; do not reset the counter, repeat completed fixes, or start another wave under the same reservation. Ambiguous execution state requires clarification.
+
+On **wave 3**, use `escalation-fixer` if available and its use criteria are met (the change has failed review more than twice: typically the initial review and two targeted re-reviews). Pass the full feedback from every review round, redacted as needed, and what each previous fix tried, along with focused check results and the exact remaining authorized blockers and scope. Earlier findings are context, not a new fix list. If the specialized fixer is unavailable or ineligible, use the normal fixer under the same constraints; do not add review rounds just to qualify. The escalation fixer does not replace independent re-review.
 
 ```text
 Fix ONLY these coordinator-approved BLOCKERs for task {ID}:
@@ -34,6 +36,7 @@ Out of scope / do not touch: {OUT_OF_SCOPE}
 
 Constraints:
 - No new feature requirements, broad refactors, new test harness or infrastructure, or unrelated fixes.
+- Preserve approved behavior and required data. If the correction needs a material scope change, stop and report it.
 - If the fix cannot be verified with existing tests/tools, stop and report BLOCKED; do not build tooling.
 - Preserve unrelated user changes.
 - Use the smallest safe correction and focused tests.
@@ -41,7 +44,7 @@ Constraints:
 - Do not spawn subagents or request your own review.
 ```
 
-Persist fix results and phase `VERIFYING`; run outstanding focused checks and save their results, then persist phase `REVIEWING` / targeted before dispatching **one targeted re-review**. Save its completion before advancing. Never rerun a completed initial review on recovery.
+Persist fix results and phase `VERIFYING`; run outstanding focused checks and save their results, then persist phase `REVIEWING` / targeted before dispatching **one independent targeted re-review for this wave**. Save its completion before advancing. Never rerun a completed initial review on recovery.
 
 `FIX_DIFF` compares a saved **pre-fix** snapshot with the post-fix snapshot, not the original task baseline. Use the runtime-excluding `snap` from [preflight](../SKILL.md#0-preflight), from the resolved target repository root:
 
@@ -72,7 +75,7 @@ fixes introduced directly related regressions. Read-only. Do not start a
 new broad review. Report PASS or BLOCK with concrete evidence.
 ```
 
-If blockers remain after the wave and targeted re-review: persist `BLOCKED`, evidence, consumed budget and smallest viable next step. A further wave requires **explicit user authorization** and a newly stated finite budget recorded before dispatch; never repeat automatically or infer permission from recovery.
+If blockers remain after the wave and targeted re-review, continue only if triage identifies an evidence-backed in-scope correction and the saved budget allows it. Otherwise persist `BLOCKED`, evidence, consumed budget and smallest viable next step. Extending an exhausted budget requires **explicit user authorization** and a newly stated finite limit recorded before dispatch. Recovery grants no additional authorization.
 
 ## Persistent decisions and evidence
 
